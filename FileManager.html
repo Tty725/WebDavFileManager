@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+  WebDAV 文件管理器
+  版本：1.0.0 by 2026/729
+  作者：Tty725
+  仓库：https://github.com/Tty725/WebDavManager
+-->
 <html lang="zh-CN">
 
 <head>
@@ -6,6 +12,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" href="./favicon.ico" type="image/x-icon">
     <title>WebDAV - 未名的云</title>
+    <script>
+        // ========== 核心配置（和Nginx配置保持一致即可） ==========
+        const DAV_API_ROOT = '/dlFM/';
+
+        // 支持在线浏览的文件扩展名列表（可配置）
+        const VIEWABLE_EXTENSIONS = [
+            'html', 'htm', 'xml', 'xhtml',
+            'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico',
+            'txt', 'md', 'json', 'css', 'js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'h', 'rb', 'php', 'sh', 'bat',
+            'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+            'mp3', 'mp4', 'webm', 'wav', 'ogg', 'flac', 'avi', 'mov', 'mkv'
+        ];
+    </script>
     <style>
         * {
             box-sizing: border-box;
@@ -85,40 +104,6 @@
             display: flex;
             gap: 10px;
             margin-left: auto;
-        }
-
-        /* 主题切换按钮 */
-        .theme-toggle-btn {
-            padding: 8px;
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            transition: all 0.2s;
-            background: transparent;
-            color: #666;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .theme-toggle-btn:hover {
-            background: rgba(0, 0, 0, 0.05);
-        }
-
-        body.dark-mode .theme-toggle-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        body.dark-mode .theme-toggle-btn {
-            color: #aaa;
-        }
-
-        .theme-toggle-btn svg {
-            transition: transform 0.3s ease;
-        }
-
-        .theme-toggle-btn:hover svg {
-            transform: scale(1.1);
         }
 
         /* 语言切换按钮 */
@@ -676,21 +661,6 @@
                     <!-- 初始图标将在 JS 中动态生成 -->
                 </svg>
             </button>
-            <button class="theme-toggle-btn" id="themeToggleBtn" title="切换主题">
-                <svg id="themeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <!-- 默认显示自动图标 -->
-                    <circle cx="12" cy="12" r="5"></circle>
-                    <line x1="12" y1="1" x2="12" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="23"></line>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                    <line x1="1" y1="12" x2="3" y2="12"></line>
-                    <line x1="21" y1="12" x2="23" y2="12"></line>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                </svg>
-            </button>
         </div>
     </div>
 
@@ -723,28 +693,10 @@
 
     <!-- 页脚 -->
     <footer id="pageFooter">
-        <p>© <span id="currentYear"></span> <a href="https://T725.CN" target="_blank">T725.CN</a> | <a href="https://github.com/Tty725/WebDavManager" target="_blank">WebDavManager</a></p>
+        <p>© <span id="currentYear"></span> <a href="https://T725.CN" target="_blank">T725.CN</a> | <a href="https://github.com/Tty725/WebDavManager" target="_blank">WebDAV File Manager</a></p>
     </footer>
 
     <script>
-        // ========== 核心配置（和Nginx配置保持一致即可） ==========
-        const DAV_API_ROOT = '/dav/';
-
-        // 支持在线浏览的文件扩展名列表（可配置）
-        const VIEWABLE_EXTENSIONS = [
-            // HTML/XML
-            'html', 'htm', 'xml', 'xhtml',
-            // 图片
-            'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico',
-            // 文本
-            'txt', 'md', 'json', 'css', 'js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'h', 'rb', 'php', 'sh', 'bat',
-            // 文档
-            'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
-            // 媒体
-            'mp3', 'mp4', 'webm', 'wav', 'ogg', 'flac', 'avi', 'mov', 'mkv'
-        ];
-        // ==========================================================
-
         // ========== 语言资源定义 ==========
         const languageResources = {
             'zh': {
@@ -752,10 +704,6 @@
                 'h1': 'WebDAV 文件管理器',
                 'rootDir': '📂 根目录',
                 'languageBtnTitle': '切换语言',
-                'themeBtnTitle': '切换主题',
-                'themeLightTitle': '当前浅色模式，点击切换为深色',
-                'themeDarkTitle': '当前深色模式，点击切换为自动',
-                'themeAutoTitle': '当前自动模式，点击切换为浅色',
                 'uploadBtn': '上传选中文件',
                 'createDirBtn': '新建目录',
                 'uploadProgress': '上传进度',
@@ -790,14 +738,10 @@
                 'operation': '操作'
             },
             'en': {
-                'title': 'WebDAV - Cloud Storage',
+                'title': 'WebDAV - My Cloud Storage',
                 'h1': 'WebDAV File Manager',
                 'rootDir': '📂 Root Directory',
                 'languageBtnTitle': 'Switch Language',
-                'themeBtnTitle': 'Switch Theme',
-                'themeLightTitle': 'Current light mode, click to switch to dark',
-                'themeDarkTitle': 'Current dark mode, click to switch to auto',
-                'themeAutoTitle': 'Current auto mode, click to switch to light',
                 'uploadBtn': 'Upload Selected Files',
                 'createDirBtn': 'Create Directory',
                 'uploadProgress': 'Upload Progress',
@@ -832,7 +776,8 @@
                 'operation': 'Operation'
             }
         };
-
+        // ==========================================================
+        
         // ========== 语言管理函数 ==========
         let currentLanguage = 'auto'; // 'zh', 'en', 'auto'
 
@@ -859,6 +804,9 @@
                 ? (navigator.language.toLowerCase().includes('zh') ? 'zh' : 'en')
                 : lang;
 
+            // 同步更新 html lang 属性
+            document.documentElement.lang = actualLang === 'zh' ? 'zh-CN' : 'en';
+
             const resources = languageResources[actualLang];
 
             // 更新页面标题
@@ -870,7 +818,6 @@
             updatePathNavLabels();
             // 更新按钮提示文字
             document.getElementById('languageToggleBtn').title = resources.languageBtnTitle;
-            document.getElementById('themeToggleBtn').title = resources.themeBtnTitle;
 
             // 更新工具栏按钮
             document.getElementById('uploadBtn').textContent = resources.uploadBtn;
@@ -977,15 +924,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             // 设置当前年份
             document.getElementById('currentYear').textContent = new Date().getFullYear();
-            // 初始化主题
-            initTheme();
             // 初始化语言
             initLanguage();
-            // 绑定主题按钮事件
-            document.getElementById('themeToggleBtn').addEventListener('click', () => {
-                toggleTheme();
-                updateThemeIcon();
-            });
             // 绑定语言按钮事件
             document.getElementById('languageToggleBtn').addEventListener('click', () => {
                 toggleLanguage();
@@ -1098,60 +1038,13 @@
             document.getElementById('pathNavContent').innerHTML = html;
         }
 
-        // 更新主题图标
-        function updateThemeIcon() {
-            const resources = getCurrentLanguageResources();
-            const themeIcon = document.getElementById('themeIcon');
-            const themeToggleBtn = document.getElementById('themeToggleBtn');
-
-            // 移除所有现有图标内容
-            themeIcon.innerHTML = '';
-
-            if (currentTheme === 'light') {
-                // 浅色模式图标 - 太阳
-                themeToggleBtn.title = resources.themeLightTitle;
-                themeIcon.innerHTML = `
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            `;
-            } else if (currentTheme === 'dark') {
-                // 深色模式图标 - 月亮
-                themeToggleBtn.title = resources.themeDarkTitle;
-                themeIcon.innerHTML = `
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            `;
-            } else {
-                // 自动模式图标 - 太阳和月亮结合
-                themeToggleBtn.title = resources.themeAutoTitle;
-                themeIcon.innerHTML = `
-                <circle cx="12" cy="12" r="5"></circle>
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            `;
-            }
-        }
-
         // 主题切换相关
         let currentTheme = 'auto'; // 'light', 'dark', 'auto'
 
         // 初始化主题
         function initTheme() {
-            // 检查本地存储
-            const savedTheme = localStorage.getItem('fileManagerTheme');
-            if (savedTheme) {
-                currentTheme = savedTheme;
-            } else {
-                // 检查系统主题
-                currentTheme = 'auto'; // 初次进入默认为自动模式
-            }
+            currentTheme = 'auto';
             applyTheme(currentTheme);
-            updateThemeIcon();
         }
 
         // 应用主题
@@ -1169,29 +1062,6 @@
             } else {
                 document.body.classList.add(`${theme}-mode`);
             }
-        }
-
-        // 主题切换事件
-        function toggleTheme() {
-            // 切换顺序：
-            // 当前为浅色 → 点击 → 深色 → 点击 → 自动 → 点击 → 浅色...
-            // 当前为深色 → 点击 → 浅色 → 点击 → 自动 → 点击 → 深色...
-            // 当前为自动 → 点击 → 浅色 → 点击 → 深色 → 点击 → 自动...
-
-            // 首先确定当前实际显示的模式（用于判断切换方向）
-            const isCurrentlyDark = document.body.classList.contains('dark-mode');
-
-            if (currentTheme === 'auto') {
-                // 自动模式下，先切换到浅色
-                applyTheme('light');
-            } else if (currentTheme === 'light') {
-                // 浅色模式下，切换到深色
-                applyTheme('dark');
-            } else {
-                // 深色模式下，切换到自动
-                applyTheme('auto');
-            }
-            updateThemeIcon();
         }
 
         // 系统主题变化监听
