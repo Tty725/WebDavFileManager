@@ -703,7 +703,7 @@
 
     <!-- PC端表头 -->
     <div class="file-list-header">
-        <div class="file-name-col">文件名</div>
+        <div class="file-name-col">文件</div>
         <div class="file-size-col">大小</div>
         <div class="file-time-col">修改时间</div>
         <div class="file-op-col">操作</div>
@@ -965,11 +965,16 @@
             document.getElementById('currentYear').textContent = new Date().getFullYear();
             // 初始化语言
             initLanguage();
+            // 初始化主题（自动跟随系统）
+            initTheme();
             // 绑定语言按钮事件
             document.getElementById('languageToggleBtn').addEventListener('click', () => {
                 toggleLanguage();
                 updateLanguageIcon();
             });
+            // 文件列表与路径导航事件委托
+            fileListEl.addEventListener('click', handleFileListClick);
+            pathNavEl.addEventListener('click', handlePathNavClick);
             // 加载文件列表
             loadPath(currentRelativePath);
             uploadBtn.addEventListener('click', handleFileUpload);
@@ -985,6 +990,16 @@
         function isViewableFile(fileName) {
             const ext = fileName.toLowerCase().split('.').pop();
             return VIEWABLE_EXTENSIONS.includes(ext);
+        }
+
+        // HTML 转义：防止文件名/元数据注入 HTML 文本或属性值
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         // 加载指定路径的文件列表（纯JSON版，无HTML解析）
@@ -1063,18 +1078,52 @@
         function renderPathNav() {
             const resources = getCurrentLanguageResources();
             const pathParts = currentRelativePath.split('/').filter(item => item);
-            let html = `<a href="#" onclick="loadPath(''); return false;">${resources.rootDir}</a>`;
+            let html = `<a href="#" data-load-path="">${escapeHtml(resources.rootDir)}</a>`;
             let currentPath = '';
 
             pathParts.forEach((part, index) => {
                 currentPath += part + '/';
                 const isLast = index === pathParts.length - 1;
+                const displayName = escapeHtml(decodeURIComponent(part));
                 html += isLast
-                    ? ` / <span>${decodeURIComponent(part)}</span>`
-                    : ` / <a href="#" onclick="loadPath('${currentPath}'); return false;">${decodeURIComponent(part)}</a>`;
+                    ? ` / <span>${displayName}</span>`
+                    : ` / <a href="#" data-load-path="${escapeHtml(currentPath)}">${displayName}</a>`;
             });
 
             document.getElementById('pathNavContent').innerHTML = html;
+        }
+
+        // 文件列表点击委托：分发操作按钮与目录链接
+        function handleFileListClick(e) {
+            const btn = e.target.closest('button[data-action]');
+            if (btn) {
+                const action = btn.dataset.action;
+                const path = btn.dataset.path;
+                const name = btn.dataset.name;
+                const isDir = btn.dataset.isdir === 'true';
+                switch (action) {
+                    case 'download': handleDownload(path, name); break;
+                    case 'rename': handleRename(path, name, isDir); break;
+                    case 'move': handleMove(path, name, isDir); break;
+                    case 'copy': handleCopy(path, name, isDir); break;
+                    case 'delete': handleDelete(path, isDir); break;
+                }
+                return;
+            }
+            const dirLink = e.target.closest('a[data-load-path]');
+            if (dirLink) {
+                e.preventDefault();
+                loadPath(dirLink.dataset.loadPath);
+            }
+        }
+
+        // 路径导航点击委托
+        function handlePathNavClick(e) {
+            const dirLink = e.target.closest('a[data-load-path]');
+            if (dirLink) {
+                e.preventDefault();
+                loadPath(dirLink.dataset.loadPath);
+            }
         }
 
         // 主题切换相关
@@ -1121,14 +1170,18 @@
             let html = '';
             files.forEach(file => {
                 const icon = file.isDir ? '📁' : '📄';
-                const fileNameDecoded = decodeURIComponent(file.fileName);
+                const safeName = escapeHtml(file.fileName);
+                const fileUrl = DAV_API_ROOT + file.fullRelativePath;
 
-                // 文件名链接（点击目录进入，点击可浏览文件在新窗口打开，点击不可浏览文件下载）
-                const fileNameLink = file.isDir
-                    ? `<a href="#" onclick="loadPath('${file.fullRelativePath}'); return false;">${fileNameDecoded}</a>`
-                    : isViewableFile(fileNameDecoded)
-                        ? `<a href="${DAV_API_ROOT}${file.fullRelativePath}" target="_blank">${fileNameDecoded}</a>`
-                        : `<a href="${DAV_API_ROOT}${file.fullRelativePath}" target="_blank" download="${fileNameDecoded}">${fileNameDecoded}</a>`;
+                // 文件名链接：目录点击进入，可浏览文件新窗口打开，其余强制下载
+                let fileNameLink;
+                if (file.isDir) {
+                    fileNameLink = `<a href="#" data-load-path="${escapeHtml(file.fullRelativePath)}">${safeName}</a>`;
+                } else if (isViewableFile(file.fileName)) {
+                    fileNameLink = `<a href="${escapeHtml(fileUrl)}" target="_blank">${safeName}</a>`;
+                } else {
+                    fileNameLink = `<a href="${escapeHtml(fileUrl)}" target="_blank" download="${safeName}">${safeName}</a>`;
+                }
 
                 html += `
                 <div class="file-item">
@@ -1140,23 +1193,121 @@
                     
                     <!-- 第二行：大小+时间 -->
                     <div class="file-meta-row">
-                        <span class="file-meta file-size">${file.fileSize}</span>
-                        <span class="file-meta file-time">${file.modifyTime}</span>
+                        <span class="file-meta file-size">${escapeHtml(file.fileSize)}</span>
+                        <span class="file-meta file-time">${escapeHtml(file.modifyTime)}</span>
                     </div>
                     
                     <!-- 第三行：操作按钮（纯图标） -->
                     <div class="file-op-row">
-                        ${!file.isDir ? `<button class="btn btn-default btn-icon" title="${resources.download}" onclick="handleDownload('${file.fullRelativePath}', '${file.fileName}')">📥</button>` : ''}
-                        <button class="btn btn-default btn-icon" title="${resources.rename}" onclick="handleRename('${file.fullRelativePath}', '${file.fileName}', ${file.isDir})">✏️</button>
-                        <button class="btn btn-default btn-icon" title="${resources.move}" onclick="handleMove('${file.fullRelativePath}', '${file.fileName}', ${file.isDir})">✂️</button>
-                        <button class="btn btn-default btn-icon" title="${resources.copy}" onclick="handleCopy('${file.fullRelativePath}', '${file.fileName}', ${file.isDir})">📑</button>
-                        <button class="btn btn-default btn-icon" title="${resources.delete}" onclick="handleDelete('${file.fullRelativePath}', ${file.isDir})">🗑️</button>
+                        ${!file.isDir ? `<button class="btn btn-default btn-icon" data-action="download" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" title="${resources.download}">📥</button>` : ''}
+                        <button class="btn btn-default btn-icon" data-action="rename" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" data-isdir="${file.isDir}" title="${resources.rename}">✏️</button>
+                        <button class="btn btn-default btn-icon" data-action="move" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" data-isdir="${file.isDir}" title="${resources.move}">✂️</button>
+                        <button class="btn btn-default btn-icon" data-action="copy" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" data-isdir="${file.isDir}" title="${resources.copy}">📑</button>
+                        <button class="btn btn-default btn-icon" data-action="delete" data-path="${escapeHtml(file.fullRelativePath)}" data-isdir="${file.isDir}" title="${resources.delete}">🗑️</button>
                     </div>
                 </div>
             `;
             });
 
             fileListEl.innerHTML = html;
+        }
+
+        // 创建单个上传进度项
+        function createProgressItem(file, index) {
+            const resources = getCurrentLanguageResources();
+            const item = document.createElement('div');
+            item.className = 'progress-item';
+            item.innerHTML = `
+                <div class="progress-file-name">${escapeHtml(file.name)}</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: 0%">
+                        <span class="progress-bar-text">0%</span>
+                    </div>
+                </div>
+                <div class="progress-status">${resources.prepareUpload}</div>
+                <button class="btn btn-default progress-btn-cancel" onclick="cancelUpload(${index})">${resources.cancel}</button>
+            `;
+            item._file = file;
+            return item;
+        }
+
+        // 设置进度项的进度条与状态文本
+        function setProgressState(progressItem, pct, statusText, statusClass) {
+            const fill = progressItem.querySelector('.progress-bar-fill');
+            const text = progressItem.querySelector('.progress-bar-text');
+            const status = progressItem.querySelector('.progress-status');
+            if (pct !== null && pct !== undefined) {
+                fill.style.width = pct + '%';
+                text.textContent = pct + '%';
+            }
+            if (statusText !== undefined) status.textContent = statusText;
+            if (statusClass !== undefined) status.className = 'progress-status' + (statusClass ? ' ' + statusClass : '');
+        }
+
+        // 上传单个文件（批量与重试共用）
+        // onComplete(success) 在请求终结时回调，用于计数或刷新
+        function uploadFileEntry(file, progressItem, xhrs, index, onComplete) {
+            const encodedFileName = encodeURIComponent(file.name);
+            const targetPath = DAV_API_ROOT + currentRelativePath + encodedFileName;
+
+            const xhr = new XMLHttpRequest();
+            xhrs[index] = xhr;
+            xhr.open('PUT', targetPath);
+            xhr.withCredentials = true;
+
+            // 上传进度监听
+            xhr.upload.addEventListener('progress', (e) => {
+                const resources = getCurrentLanguageResources();
+                if (e.lengthComputable) {
+                    setProgressState(progressItem, Math.round((e.loaded / e.total) * 100), resources.uploading, '');
+                }
+            });
+
+            // 请求完成（HTTP 层面，含成功与失败状态码）
+            xhr.addEventListener('load', () => {
+                const resources = getCurrentLanguageResources();
+                const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
+                if (xhr.status === 200 || xhr.status === 201) {
+                    setProgressState(progressItem, 100, resources.uploadSuccess, 'success');
+                    cancelBtn.textContent = resources.complete;
+                    cancelBtn.disabled = true;
+                } else {
+                    setProgressState(progressItem, null, `${resources.uploadError} (${xhr.status})`, 'error');
+                    cancelBtn.textContent = resources.retry;
+                    cancelBtn.disabled = false;
+                    cancelBtn.onclick = () => retryFile(file, progressItem, xhrs, index);
+                }
+            });
+
+            // 网络错误
+            xhr.addEventListener('error', () => {
+                const resources = getCurrentLanguageResources();
+                const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
+                setProgressState(progressItem, null, resources.networkError, 'error');
+                cancelBtn.textContent = resources.retry;
+                cancelBtn.disabled = false;
+                cancelBtn.onclick = () => retryFile(file, progressItem, xhrs, index);
+            });
+
+            // 请求终结（成功/失败/取消均触发）：用于完成计数
+            xhr.addEventListener('loadend', () => {
+                if (onComplete) onComplete(xhr.status === 200 || xhr.status === 201);
+            });
+
+            xhr.send(file);
+        }
+
+        // 重试单个文件
+        function retryFile(file, progressItem, xhrs, index) {
+            const resources = getCurrentLanguageResources();
+            const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
+            setProgressState(progressItem, 0, resources.prepareUpload, '');
+            cancelBtn.textContent = resources.cancel;
+            cancelBtn.disabled = false;
+            cancelBtn.onclick = () => cancelUpload(index);
+            uploadFileEntry(file, progressItem, xhrs, index, (success) => {
+                if (success) loadPath(currentRelativePath);
+            });
         }
 
         // 处理文件上传（带进度条）
@@ -1181,99 +1332,22 @@
             const totalFiles = files.length;
 
             Array.from(files).forEach((file, index) => {
-                const encodedFileName = encodeURIComponent(file.name);
-                const targetPath = DAV_API_ROOT + currentRelativePath + encodedFileName;
-
-                // 创建进度条元素
-                const progressItem = document.createElement('div');
-                progressItem.className = 'progress-item';
-                const resources = getCurrentLanguageResources();
-                progressItem.innerHTML = `
-                <div class="progress-file-name">${file.name}</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: 0%">
-                        <span class="progress-bar-text">0%</span>
-                    </div>
-                </div>
-                <div class="progress-status">${resources.prepareUpload}</div>
-                <button class="btn btn-default progress-btn-cancel" onclick="cancelUpload(${index})">${resources.cancel}</button>
-            `;
+                const progressItem = createProgressItem(file, index);
                 progressList.appendChild(progressItem);
-
-                // 创建XMLHttpRequest
-                const xhr = new XMLHttpRequest();
-                xhrs[index] = xhr;
-
-                xhr.open('PUT', targetPath);
-                xhr.withCredentials = true;
-
-                // 上传进度监听
-                xhr.upload.addEventListener('progress', (e) => {
-                    const resources = getCurrentLanguageResources();
-                    if (e.lengthComputable) {
-                        const percentComplete = Math.round((e.loaded / e.total) * 100);
-                        const progressFill = progressItem.querySelector('.progress-bar-fill');
-                        const progressText = progressItem.querySelector('.progress-bar-text');
-                        const progressStatus = progressItem.querySelector('.progress-status');
-
-                        progressFill.style.width = percentComplete + '%';
-                        progressText.textContent = percentComplete + '%';
-                        progressStatus.textContent = resources.uploading;
-                    }
-                });
-
-                // 上传完成监听
-                xhr.addEventListener('load', () => {
-                    const resources = getCurrentLanguageResources();
-                    const progressStatus = progressItem.querySelector('.progress-status');
-                    const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
-
+                uploadFileEntry(file, progressItem, xhrs, index, () => {
                     completedCount++;
-
-                    if (xhr.status === 200 || xhr.status === 201) {
-                        progressStatus.textContent = resources.uploadSuccess;
-                        progressStatus.className = 'progress-status success';
-                        cancelBtn.textContent = resources.complete;
-                        cancelBtn.disabled = true;
-                    } else {
-                        progressStatus.textContent = `${resources.uploadError} (${xhr.status})`;
-                        progressStatus.className = 'progress-status error';
-                        cancelBtn.textContent = resources.retry;
-                        cancelBtn.onclick = () => {
-                            // 重试逻辑
-                            handleFileUpload();
-                        };
-                    }
-
-                    // 所有文件上传完成后刷新文件列表
+                    // 所有文件终结后刷新列表（无论成功/失败/取消）
                     if (completedCount === totalFiles) {
                         setTimeout(() => {
                             fileInput.value = '';
                             loadPath(currentRelativePath);
-                            // 可选：3秒后自动隐藏进度条
+                            // 3秒后自动隐藏进度条
                             setTimeout(() => {
                                 progressArea.style.display = 'none';
                             }, 3000);
                         }, 500);
                     }
                 });
-
-                // 上传错误监听
-                xhr.addEventListener('error', () => {
-                    const resources = getCurrentLanguageResources();
-                    const progressStatus = progressItem.querySelector('.progress-status');
-                    const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
-                    progressStatus.textContent = resources.networkError;
-                    progressStatus.className = 'progress-status error';
-                    cancelBtn.textContent = resources.retry;
-                    cancelBtn.onclick = () => {
-                        handleFileUpload();
-                    };
-                });
-
-                // 取消按钮事件（已在HTML中绑定）
-                // 发送请求
-                xhr.send(file);
             });
         }
 
@@ -1286,14 +1360,12 @@
                 xhr.abort();
                 const progressList = document.getElementById('progressList');
                 const progressItem = progressList.children[index];
-                const progressStatus = progressItem.querySelector('.progress-status');
                 const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
-                progressStatus.textContent = '已取消';
-                progressStatus.className = 'progress-status error';
+                setProgressState(progressItem, null, '已取消', 'error');
                 cancelBtn.textContent = resources.retry;
-                cancelBtn.onclick = () => {
-                    handleFileUpload();
-                };
+                cancelBtn.disabled = false;
+                const file = progressItem._file;
+                cancelBtn.onclick = () => retryFile(file, progressItem, xhrs, index);
             }
         }
 
@@ -1319,20 +1391,21 @@
             }
         }
 
-        // 处理重命名（完全不变）
+        // 处理重命名
         async function handleRename(oldFullPath, oldFileName, isDir) {
             const resources = getCurrentLanguageResources();
-            const oldNameDecoded = decodeURIComponent(oldFileName);
+            // oldFileName 已是原始名（来自 dataset），无需 decode
             const promptTip = isDir
                 ? resources.renameDirPrompt
                 : resources.renameFilePrompt;
-            const newName = prompt(promptTip, oldNameDecoded);
+            const newName = prompt(promptTip, oldFileName);
 
-            if (!newName || newName.trim() === '' || newName.trim() === oldNameDecoded) return;
+            if (!newName || newName.trim() === '' || newName.trim() === oldFileName) return;
 
             const encodedNewName = encodeURIComponent(newName.trim());
             const oldPath = DAV_API_ROOT + oldFullPath;
-            const pathPrefix = oldFullPath.substring(0, oldFullPath.lastIndexOf(oldFileName));
+            // oldFullPath = currentRelativePath + encodeURIComponent(fileName)，前缀即当前目录
+            const pathPrefix = currentRelativePath;
             const newFullPath = pathPrefix + encodedNewName + (isDir ? '/' : '');
             const newPath = DAV_API_ROOT + newFullPath;
 
@@ -1418,10 +1491,10 @@
 
         // 处理下载（强制下载任何文件）
         function handleDownload(fullPath, fileName) {
-            const fileNameDecoded = decodeURIComponent(fileName);
+            // fileName 已是原始名（来自 dataset），无需 decode
             const link = document.createElement('a');
             link.href = DAV_API_ROOT + fullPath;
-            link.download = fileNameDecoded;
+            link.download = fileName;
             link.target = '_blank';
             document.body.appendChild(link);
             link.click();
