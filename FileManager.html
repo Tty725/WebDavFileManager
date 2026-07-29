@@ -667,7 +667,7 @@
     </div>
 
     <!-- 目录移动/复制警告 -->
-    <div id="dirMoveWarning" style="font-size:0.85em;color:#e68a00;margin-bottom:8px;padding:6px 12px;background:#fff8e1;border-radius:6px;"></div>
+    <div id="dirMoveWarning" style="font-size:0.85em;color:#e68a00;margin-bottom:8px;padding:6px 12px;background:#fff8e1;border-radius:6px;text-align:right;"></div>
 
     <!-- PC端表头 -->
     <div class="file-list-header">
@@ -871,17 +871,9 @@
 
         // 语言切换逻辑
         function toggleLanguage() {
-            let nextLanguage;
-            if (currentLanguage === 'zh') {
-                nextLanguage = 'en';
-            } else if (currentLanguage === 'en') {
-                nextLanguage = 'auto';
-            } else {
-                // auto 模式下点击切换到 zh
-                nextLanguage = 'zh';
-            }
+            currentLanguage = currentLanguage === 'zh' ? 'en' : 'zh';
 
-            applyLanguage(nextLanguage);
+            applyLanguage(currentLanguage);
             updateLanguageIcon();
             // 重新加载文件列表以更新按钮文案
             loadPath(currentRelativePath);
