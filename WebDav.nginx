@@ -5,13 +5,13 @@ location = /FileManager.html {
 }
 location /WebDav/ {
     alias /data/downloads/;
-    index off;                 # 强制访问/dav/时，返回autoindex列表，而不是index.html文件
+    index off;                                         # 强制访问/WebDav/时，返回autoindex列表，而不是index.html文件
 
     # 1. 自动索引（用于列目录）
     autoindex on;
-    autoindex_format json;     # json 格式
-    autoindex_localtime on;    # 文件(修改)时间是服务器时间
-    autoindex_exact_size off;  # 大小自动显示MB/GB单位
+    autoindex_format json;                             # json 格式
+    autoindex_localtime on;                            # 文件(修改)时间是服务器时间
+    autoindex_exact_size off;                          # 大小自动显示MB/GB单位
     # 2. HTTP Basic 认证
     auth_basic "Restricted WebDAV";
     auth_basic_user_file /etc/nginx/conf.d/.htpasswd;  # 密码文件路径
@@ -24,5 +24,5 @@ location /WebDav/ {
     #add_header Access-Control-Allow-Origin *;
     #add_header Access-Control-Allow-Methods "GET, PUT, DELETE, MOVE, MKCOL, OPTIONS";
     #add_header Access-Control-Allow-Headers "Authorization, Destination, Content-Type";
-    #if ($request_method = OPTIONS) { return 204; }
+    if ($request_method = OPTIONS) { return 204; }
 }
