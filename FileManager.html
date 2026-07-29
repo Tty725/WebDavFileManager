@@ -21,7 +21,7 @@
             'html', 'htm', 'xml', 'xhtml',
             'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico',
             'txt', 'md', 'json', 'css', 'js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'h', 'rb', 'php', 'sh', 'bat',
-            'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+            'pdf',
             'mp3', 'mp4', 'webm', 'wav', 'ogg', 'flac', 'avi', 'mov', 'mkv'
         ];
     </script>
@@ -734,7 +734,9 @@
                 'modifyTime': '修改时间',
                 'operation': '操作',
                 'cancelled': '已取消',
-                'destSameAsSource': '目标路径与源路径相同或为根目录，请重新输入'
+                'destSameAsSource': '目标路径与源路径相同或为根目录，请重新输入',
+                'invalidName': '名称不能包含 / 字符',
+                'locale': 'zh-CN'
             },
             'en': {
                 'title': 'WebDAV - My Cloud Storage',
@@ -782,7 +784,9 @@
                 'modifyTime': 'Modified Time',
                 'operation': 'Operation',
                 'cancelled': 'Cancelled',
-                'destSameAsSource': 'Destination is the same as root or source, please re-enter'
+                'destSameAsSource': 'Destination is the same as root or source, please re-enter',
+                'invalidName': 'Name cannot contain /',
+                'locale': 'en-US'
             }
         };
         // ==========================================================
@@ -809,14 +813,10 @@
             currentLanguage = lang;
             localStorage.setItem('fileManagerLanguage', lang);
 
-            const actualLang = lang === 'auto'
-                ? (navigator.language.toLowerCase().includes('zh') ? 'zh' : 'en')
-                : lang;
-
             // 同步更新 html lang 属性
-            document.documentElement.lang = actualLang === 'zh' ? 'zh-CN' : 'en';
+            document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
 
-            const resources = languageResources[actualLang];
+            const resources = languageResources[lang];
 
             // 更新页面标题
             document.title = resources.title;
@@ -863,10 +863,7 @@
 
         // 获取当前语言资源
         function getCurrentLanguageResources() {
-            const actualLang = currentLanguage === 'auto'
-                ? (navigator.language.toLowerCase().includes('zh') ? 'zh' : 'en')
-                : currentLanguage;
-            return languageResources[actualLang];
+            return languageResources[currentLanguage];
         }
 
         // 语言切换逻辑
@@ -1017,9 +1014,7 @@
                 // 前端自由格式化时间（不受Nginx配置影响）
                 const formatTime = (isoTime) => {
                     const date = new Date(isoTime);
-                    const isZh = currentLanguage === 'zh'
-                        || (currentLanguage === 'auto' && navigator.language.toLowerCase().includes('zh'));
-                    return date.toLocaleString(isZh ? 'zh-CN' : 'en-US', {
+                    return date.toLocaleString(getCurrentLanguageResources().locale, {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
@@ -1092,37 +1087,23 @@
             }
         }
 
-        // 主题切换相关
-        let currentTheme = 'auto'; // 'light', 'dark', 'auto'
+        // 主题：跟随系统
 
         // 初始化主题
         function initTheme() {
-            currentTheme = 'auto';
-            applyTheme(currentTheme);
+            applyTheme();
         }
 
-        // 应用主题
-        function applyTheme(theme) {
-            currentTheme = theme;
-            localStorage.setItem('fileManagerTheme', theme);
-
-            // 移除所有主题类
+        // 应用主题（跟随系统）
+        function applyTheme() {
             document.body.classList.remove('light-mode', 'dark-mode');
-
-            if (theme === 'auto') {
-                // 跟随系统
-                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.body.classList.add(isDark ? 'dark-mode' : 'light-mode');
-            } else {
-                document.body.classList.add(`${theme}-mode`);
-            }
+            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.body.classList.add(isDark ? 'dark-mode' : 'light-mode');
         }
 
         // 系统主题变化监听
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            if (currentTheme === 'auto') {
-                applyTheme('auto');
-            }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            applyTheme();
         });
 
         // 渲染文件列表
@@ -1336,6 +1317,10 @@
             const resources = getCurrentLanguageResources();
             const dirName = prompt(resources.createDirPrompt);
             if (!dirName || dirName.trim() === '') return;
+            if (dirName.includes('/')) {
+                alert(resources.invalidName);
+                return;
+            }
 
             const encodedDirName = encodeURIComponent(dirName.trim());
             const targetPath = DAV_API_ROOT + currentRelativePath + encodedDirName + '/';
@@ -1363,6 +1348,10 @@
             const newName = prompt(promptTip, oldFileName);
 
             if (!newName || newName.trim() === '' || newName.trim() === oldFileName) return;
+            if (newName.includes('/')) {
+                alert(resources.invalidName);
+                return;
+            }
 
             const encodedNewName = encodeURIComponent(newName.trim());
             const oldPath = DAV_API_ROOT + oldFullPath;
