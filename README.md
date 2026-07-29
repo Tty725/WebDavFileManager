@@ -10,6 +10,21 @@
    - 使用配置生效 `sudo ngintx -t && sudo ngintx -s reload`
 3. 上传`FileManager.html`到 Nginx 的站点根目录下，通过浏览器访问 `https://youdomain/FileManager.html`
 
+### 更新记录
+
+v3.0 2026/7/30
+
+- 增加了移动与复制功能
+- 安全加固，及其他修复
+
+v2.0 2026/4/16
+
+- 增加了中英文语言与主题颜色的自适应
+
+v1.0 2026/4/4
+
+- WebDav 文件管理功能的实现
+
 
 ## English
 
