@@ -758,7 +758,6 @@
                 'copyPrompt': '请输入【不存在的】目标路径（相对于当前目录）：\n示例：../backup/file.txt',
                 'dirMoveWarning': '⚠️ 对文件夹做移动或复制时，目标路径不能是已存在的，因为Nginx是先删除目标目录！',
                 'authFailed': '认证失败，请刷新页面重新输入账号密码',
-                'requestFailed': '请求失败:',
                 'directory': '目录',
                 'file': '文件',
                 'size': '大小',
@@ -805,7 +804,6 @@
                 'copyPrompt': 'Enter a 【non-existing】 destination path (relative to current directory):\ne.g., ../backup/file.txt',
                 'dirMoveWarning': '⚠️ When moving or copying a folder, the destination must not already exist, because Nginx deletes the target directory first!',
                 'authFailed': 'Authentication failed, please refresh and re-enter credentials',
-                'requestFailed': 'Request failed:',
                 'directory': 'Directory',
                 'file': 'File',
                 'size': 'Size',
@@ -875,9 +873,6 @@
             document.querySelectorAll('.file-list-header div')[2].textContent = resources.modifyTime;
             document.querySelectorAll('.file-list-header div')[3].textContent = resources.operation;
 
-            // 更新文件列表
-            updateFileListLabels();
-
             // 更新加载/空目录提示
             if (document.querySelector('.loading')) {
                 document.querySelector('.loading').textContent = resources.loading;
@@ -891,32 +886,6 @@
             if (rootLink) {
                 rootLink.textContent = resources.rootDir;
             }
-        }
-
-        // 更新文件列表标签
-        function updateFileListLabels() {
-            const resources = getCurrentLanguageResources();
-            const fileItems = document.querySelectorAll('.file-item');
-
-            fileItems.forEach(item => {
-                // 更新下载按钮
-                const downloadBtn = item.querySelector('.btn-default:first-child');
-                if (downloadBtn && (downloadBtn.textContent.includes('下载') || downloadBtn.textContent.includes('Download'))) {
-                    downloadBtn.textContent = resources.download;
-                }
-
-                // 更新重命名按钮
-                const renameBtn = item.querySelector('.btn-default:nth-child(2)');
-                if (renameBtn && (renameBtn.textContent.includes('重命名') || renameBtn.textContent.includes('Rename'))) {
-                    renameBtn.textContent = resources.rename;
-                }
-
-                // 更新删除按钮
-                const deleteBtn = item.querySelector('.btn-danger');
-                if (deleteBtn && (deleteBtn.textContent.includes('删除') || deleteBtn.textContent.includes('Delete'))) {
-                    deleteBtn.textContent = resources.delete;
-                }
-            });
         }
 
         // 获取当前语言资源
@@ -1006,6 +975,14 @@
                 .replace(/'/g, '&#39;');
         }
 
+        // 统一响应错误处理：401 提示重新认证，其余抛 HTTP 状态
+        function throwIfFailed(response, resources) {
+            if (!response.ok) {
+                if (response.status === 401) throw new Error(resources.authFailed);
+                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+            }
+        }
+
         // 加载指定路径的文件列表（纯JSON版，无HTML解析）
         async function loadPath(relativePath) {
             const resources = getCurrentLanguageResources();
@@ -1019,10 +996,7 @@
                     credentials: 'include'
                 });
 
-                if (!response.ok) {
-                    if (response.status === 401) throw new Error(resources.authFailed);
-                    throw new Error(`${resources.requestFailed} HTTP ${response.status} ${response.statusText}`);
-                }
+                throwIfFailed(response, resources);
 
                 // 直接解析JSON，彻底删除旧的HTML解析逻辑
                 const rawFileList = await response.json();
@@ -1057,7 +1031,9 @@
                 // 前端自由格式化时间（不受Nginx配置影响）
                 const formatTime = (isoTime) => {
                     const date = new Date(isoTime);
-                    return date.toLocaleString('zh-CN', {
+                    const isZh = currentLanguage === 'zh'
+                        || (currentLanguage === 'auto' && navigator.language.toLowerCase().includes('zh'));
+                    return date.toLocaleString(isZh ? 'zh-CN' : 'en-US', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
@@ -1276,7 +1252,8 @@
                     cancelBtn.textContent = resources.complete;
                     cancelBtn.disabled = true;
                 } else {
-                    setProgressState(progressItem, null, `${resources.uploadError} (${xhr.status})`, 'error');
+                    const errMsg = xhr.status === 401 ? resources.authFailed : `${resources.uploadError} (${xhr.status})`;
+                    setProgressState(progressItem, null, errMsg, 'error');
                     cancelBtn.textContent = resources.retry;
                     cancelBtn.disabled = false;
                     cancelBtn.onclick = () => retryFile(file, progressItem, xhrs, index);
@@ -1387,7 +1364,7 @@
                     method: 'MKCOL',
                     credentials: 'include'
                 });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                throwIfFailed(response, resources);
                 loadPath(currentRelativePath);
             } catch (err) {
                 alert(`${resources.createDirFailed}${err.message}`);
@@ -1419,7 +1396,7 @@
                     headers: { 'Destination': new URL(newPath, window.location.origin).href },
                     credentials: 'include'
                 });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                throwIfFailed(response, resources);
                 loadPath(currentRelativePath);
             } catch (err) {
                 alert(`${resources.renameFailed}${err.message}`);
@@ -1454,7 +1431,7 @@
                     headers: { 'Destination': destUrl },
                     credentials: 'include'
                 });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                throwIfFailed(response, resources);
                 loadPath(currentRelativePath);
             } catch (err) {
                 alert(`${resources.moveFailed}${err.message}`);
@@ -1489,7 +1466,7 @@
                     headers: { 'Destination': destUrl },
                     credentials: 'include'
                 });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                throwIfFailed(response, resources);
                 loadPath(currentRelativePath);
             } catch (err) {
                 alert(`${resources.copyFailed}${err.message}`);
@@ -1523,7 +1500,7 @@
                     method: 'DELETE',
                     credentials: 'include'
                 });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                throwIfFailed(response, resources);
                 loadPath(currentRelativePath);
             } catch (err) {
                 alert(`${resources.deleteFailed}${err.message}`);
