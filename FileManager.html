@@ -9,7 +9,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="./favicon.ico" type="image/x-icon">
     <title>WebDAV - 未名的云</title>
     <script>
@@ -415,20 +415,14 @@
                 min-width: 280px;
             }
 
-            /* 文件项改回横向布局 */
+            /* 文件项横向布局 */
             .file-item {
                 flex-direction: row;
                 align-items: center;
                 padding: 12px 15px;
             }
 
-            /* PC端文件项横向布局，和表头对齐 */
-            .file-item {
-                flex-direction: row;
-                align-items: center;
-            }
-
-            /* PC端各列宽度和表头严格对应 */
+            /* 各列宽度与表头严格对应 */
             .file-name-row {
                 flex: 3;
                 margin-right: 15px;
@@ -436,6 +430,7 @@
             }
 
             .file-meta-row {
+                display: flex;
                 flex: 2.5;
                 justify-content: flex-start;
                 gap: 0;
@@ -446,19 +441,13 @@
                 flex: 1;
                 justify-content: flex-end;
                 gap: 10px;
-                /* 和工具栏按钮间距完全一致 */
+                text-align: right;
+                min-width: 280px;
+                margin-bottom: 0;
             }
 
-            /* 优化PC端列布局 - 与表头严格对齐 */
             .file-icon {
                 margin-right: 8px;
-            }
-
-            /* 文件名列 */
-            .file-name-row {
-                flex: 3;
-                margin-right: 15px;
-                margin-bottom: 0;
             }
 
             .file-name {
@@ -466,23 +455,11 @@
                 font-weight: normal;
             }
 
-            /* 元数据列（包含大小和时间） - 调整为与表头对齐 */
-            .file-meta-row {
-                display: flex;
-                flex: 2.5;
-                /* 1 + 1.5 = 2.5，与表头大小+时间列总和一致 */
-                justify-content: flex-start;
-                gap: 0;
-                /* 取消间隔，使用与表头相同的对齐方式 */
-                margin-bottom: 0;
-            }
-
             .file-meta {
                 color: #666;
                 font-size: 0.9em;
             }
 
-            /* 文件大小列 - 与表头 .file-size-col 一致 */
             .file-size {
                 text-align: right;
                 flex: 1;
@@ -490,19 +467,10 @@
                 margin-bottom: 0;
             }
 
-            /* 文件时间列 - 与表头 .file-time-col 一致 */
             .file-time {
                 text-align: right;
                 flex: 1.5;
                 min-width: 50px;
-                margin-bottom: 0;
-            }
-
-            /* 操作列 - 与表头 .file-op-col 严格一致 */
-            .file-op-row {
-                flex: 1;
-                text-align: right;
-                min-width: 280px;
                 margin-bottom: 0;
             }
 
@@ -684,7 +652,7 @@
 
     <!-- 工具栏 -->
     <div class="toolbar">
-        <input type="file" id="fileInput" multiple>
+        <input type="file" id="fileInput" multiple aria-label="选择文件">
         <div class="toolbar-buttons">
             <button class="btn btn-primary" id="uploadBtn">上传选中文件</button>
             <button class="btn btn-default" id="createDirBtn">新建目录</button>
@@ -746,6 +714,7 @@
                 'prepareUpload': '准备上传...',
                 'uploading': '上传中...',
                 'uploadSuccess': '上传成功',
+                'selectFile': '选择文件',
                 'selectFileFirst': '请先选择要上传的文件',
                 'createDirFailed': '创建目录失败：',
                 'renameFailed': '重命名失败：',
@@ -758,6 +727,7 @@
                 'copyPrompt': '请输入【不存在的】目标路径（相对于当前目录）：\n示例：../backup/file.txt',
                 'dirMoveWarning': '⚠️ 对文件夹做移动或复制时，目标路径不能是已存在的，因为Nginx是先删除目标目录！',
                 'authFailed': '认证失败，请刷新页面重新输入账号密码',
+                'requestTimeout': '请求超时，请重试',
                 'directory': '目录',
                 'file': '文件',
                 'size': '大小',
@@ -792,6 +762,7 @@
                 'prepareUpload': 'Preparing upload...',
                 'uploading': 'Uploading...',
                 'uploadSuccess': 'Upload successful',
+                'selectFile': 'Select file',
                 'selectFileFirst': 'Please select files to upload first',
                 'createDirFailed': 'Failed to create directory:',
                 'renameFailed': 'Failed to rename:',
@@ -804,6 +775,7 @@
                 'copyPrompt': 'Enter a 【non-existing】 destination path (relative to current directory):\ne.g., ../backup/file.txt',
                 'dirMoveWarning': '⚠️ When moving or copying a folder, the destination must not already exist, because Nginx deletes the target directory first!',
                 'authFailed': 'Authentication failed, please refresh and re-enter credentials',
+                'requestTimeout': 'Request timed out, please retry',
                 'directory': 'Directory',
                 'file': 'File',
                 'size': 'Size',
@@ -859,6 +831,7 @@
             // 更新工具栏按钮
             document.getElementById('uploadBtn').textContent = resources.uploadBtn;
             document.getElementById('createDirBtn').textContent = resources.createDirBtn;
+            document.getElementById('fileInput').setAttribute('aria-label', resources.selectFile);
 
             // 更新上传进度区域标题
             document.querySelector('.upload-progress-title').textContent = resources.uploadProgress;
@@ -943,7 +916,6 @@
             // 绑定语言按钮事件
             document.getElementById('languageToggleBtn').addEventListener('click', () => {
                 toggleLanguage();
-                updateLanguageIcon();
             });
             // 文件列表与路径导航事件委托
             fileListEl.addEventListener('click', handleFileListClick);
@@ -984,34 +956,56 @@
         }
 
         // 加载指定路径的文件列表（纯JSON版，无HTML解析）
+        let currentLoadController = null;
+
         async function loadPath(relativePath) {
             const resources = getCurrentLanguageResources();
             currentRelativePath = relativePath;
             renderPathNav();
             fileListEl.innerHTML = `<div class="loading">${resources.loading}</div>`;
 
+            // 取消上一次未完成的请求，避免竞态覆盖
+            if (currentLoadController) currentLoadController.abort();
+            const controller = new AbortController();
+            currentLoadController = controller;
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+
             try {
                 const apiPath = getCurrentApiPath();
                 const response = await fetch(apiPath, {
-                    credentials: 'include'
+                    credentials: 'include',
+                    signal: controller.signal
                 });
 
                 throwIfFailed(response, resources);
 
-                // 直接解析JSON，彻底删除旧的HTML解析逻辑
+                // 直接解析JSON
                 const rawFileList = await response.json();
+                // 已被新请求取代则不再渲染
+                if (controller !== currentLoadController) return;
                 const files = parseAutoIndexJSON(rawFileList);
                 renderFileList(files);
 
             } catch (err) {
+                if (err.name === 'AbortError') {
+                    // 超时（仍是当前请求）提示；被新请求取代则静默
+                    if (controller === currentLoadController) {
+                        fileListEl.innerHTML = `<div class="error">❌ ${resources.requestTimeout}</div>`;
+                    }
+                    return;
+                }
                 fileListEl.innerHTML = `<div class="error">❌ ${err.message}</div>`;
                 console.error('加载失败', err);
+            } finally {
+                clearTimeout(timeoutId);
+                if (controller === currentLoadController) currentLoadController = null;
             }
         }
 
         // 纯JSON解析函数（极简稳定，替代原HTML解析）
         function parseAutoIndexJSON(jsonData) {
             const files = [];
+            if (!Array.isArray(jsonData)) return files;
             jsonData.forEach(item => {
                 // 跳过上级目录
                 if (item.name === '..') return;
@@ -1024,7 +1018,7 @@
                 const formatSize = (bytes) => {
                     if (bytes === 0 || isDir) return '-';
                     const units = ['B', 'K', 'M', 'G', 'T'];
-                    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
                     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + units[i];
                 };
 
@@ -1139,7 +1133,7 @@
             }
         });
 
-        // 渲染文件列表（完全不变）
+        // 渲染文件列表
         function renderFileList(files) {
             const resources = getCurrentLanguageResources();
             if (files.length === 0) {
@@ -1179,11 +1173,11 @@
                     
                     <!-- 第三行：操作按钮（纯图标） -->
                     <div class="file-op-row">
-                        ${!file.isDir ? `<button class="btn btn-default btn-icon" data-action="download" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" title="${resources.download}">📥</button>` : ''}
-                        <button class="btn btn-default btn-icon" data-action="rename" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" data-isdir="${file.isDir}" title="${resources.rename}">✏️</button>
-                        <button class="btn btn-default btn-icon" data-action="move" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" data-isdir="${file.isDir}" title="${resources.move}">✂️</button>
-                        <button class="btn btn-default btn-icon" data-action="copy" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" data-isdir="${file.isDir}" title="${resources.copy}">📑</button>
-                        <button class="btn btn-default btn-icon" data-action="delete" data-path="${escapeHtml(file.fullRelativePath)}" data-isdir="${file.isDir}" title="${resources.delete}">🗑️</button>
+                        ${!file.isDir ? `<button class="btn btn-default btn-icon" data-action="download" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" title="${resources.download}" aria-label="${resources.download}">📥</button>` : ''}
+                        <button class="btn btn-default btn-icon" data-action="rename" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" data-isdir="${file.isDir}" title="${resources.rename}" aria-label="${resources.rename}">✏️</button>
+                        <button class="btn btn-default btn-icon" data-action="move" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" data-isdir="${file.isDir}" title="${resources.move}" aria-label="${resources.move}">✂️</button>
+                        <button class="btn btn-default btn-icon" data-action="copy" data-path="${escapeHtml(file.fullRelativePath)}" data-name="${safeName}" data-isdir="${file.isDir}" title="${resources.copy}" aria-label="${resources.copy}">📑</button>
+                        <button class="btn btn-default btn-icon" data-action="delete" data-path="${escapeHtml(file.fullRelativePath)}" data-isdir="${file.isDir}" title="${resources.delete}" aria-label="${resources.delete}">🗑️</button>
                     </div>
                 </div>
             `;
@@ -1193,7 +1187,7 @@
         }
 
         // 创建单个上传进度项
-        function createProgressItem(file, index) {
+        function createProgressItem(file) {
             const resources = getCurrentLanguageResources();
             const item = document.createElement('div');
             item.className = 'progress-item';
@@ -1205,7 +1199,7 @@
                     </div>
                 </div>
                 <div class="progress-status">${resources.prepareUpload}</div>
-                <button class="btn btn-default progress-btn-cancel" onclick="cancelUpload(${index})">${resources.cancel}</button>
+                <button class="btn btn-default progress-btn-cancel">${resources.cancel}</button>
             `;
             item._file = file;
             return item;
@@ -1226,14 +1220,18 @@
 
         // 上传单个文件（批量与重试共用）
         // onComplete(success) 在请求终结时回调，用于计数或刷新
-        function uploadFileEntry(file, progressItem, xhrs, index, onComplete) {
+        function uploadFileEntry(file, progressItem, onComplete) {
             const encodedFileName = encodeURIComponent(file.name);
             const targetPath = DAV_API_ROOT + currentRelativePath + encodedFileName;
 
             const xhr = new XMLHttpRequest();
-            xhrs[index] = xhr;
+            progressItem._xhr = xhr;
             xhr.open('PUT', targetPath);
             xhr.withCredentials = true;
+
+            // 取消按钮绑定
+            const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
+            cancelBtn.onclick = () => cancelUpload(progressItem);
 
             // 上传进度监听
             xhr.upload.addEventListener('progress', (e) => {
@@ -1246,7 +1244,6 @@
             // 请求完成（HTTP 层面，含成功与失败状态码）
             xhr.addEventListener('load', () => {
                 const resources = getCurrentLanguageResources();
-                const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
                 if (xhr.status === 200 || xhr.status === 201) {
                     setProgressState(progressItem, 100, resources.uploadSuccess, 'success');
                     cancelBtn.textContent = resources.complete;
@@ -1256,18 +1253,17 @@
                     setProgressState(progressItem, null, errMsg, 'error');
                     cancelBtn.textContent = resources.retry;
                     cancelBtn.disabled = false;
-                    cancelBtn.onclick = () => retryFile(file, progressItem, xhrs, index);
+                    cancelBtn.onclick = () => retryFile(file, progressItem);
                 }
             });
 
             // 网络错误
             xhr.addEventListener('error', () => {
                 const resources = getCurrentLanguageResources();
-                const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
                 setProgressState(progressItem, null, resources.networkError, 'error');
                 cancelBtn.textContent = resources.retry;
                 cancelBtn.disabled = false;
-                cancelBtn.onclick = () => retryFile(file, progressItem, xhrs, index);
+                cancelBtn.onclick = () => retryFile(file, progressItem);
             });
 
             // 请求终结（成功/失败/取消均触发）：用于完成计数
@@ -1279,14 +1275,14 @@
         }
 
         // 重试单个文件
-        function retryFile(file, progressItem, xhrs, index) {
+        function retryFile(file, progressItem) {
             const resources = getCurrentLanguageResources();
             const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
             setProgressState(progressItem, 0, resources.prepareUpload, '');
             cancelBtn.textContent = resources.cancel;
             cancelBtn.disabled = false;
-            cancelBtn.onclick = () => cancelUpload(index);
-            uploadFileEntry(file, progressItem, xhrs, index, (success) => {
+            cancelBtn.onclick = () => cancelUpload(progressItem);
+            uploadFileEntry(file, progressItem, (success) => {
                 if (success) loadPath(currentRelativePath);
             });
         }
@@ -1306,16 +1302,13 @@
             progressArea.style.display = 'block';
             progressList.innerHTML = '';
 
-            // 用于跟踪所有上传请求
-            const xhrs = [];
-            window.uploadXhrs = xhrs;
             let completedCount = 0;
             const totalFiles = files.length;
 
-            Array.from(files).forEach((file, index) => {
-                const progressItem = createProgressItem(file, index);
+            Array.from(files).forEach((file) => {
+                const progressItem = createProgressItem(file);
                 progressList.appendChild(progressItem);
-                uploadFileEntry(file, progressItem, xhrs, index, () => {
+                uploadFileEntry(file, progressItem, () => {
                     completedCount++;
                     // 所有文件终结后刷新列表（无论成功/失败/取消）
                     if (completedCount === totalFiles) {
@@ -1333,24 +1326,20 @@
         }
 
         // 取消上传
-        function cancelUpload(index) {
+        function cancelUpload(progressItem) {
             const resources = getCurrentLanguageResources();
-            const xhrs = window.uploadXhrs || [];
-            const xhr = xhrs[index];
+            const xhr = progressItem._xhr;
             if (xhr && xhr.readyState !== XMLHttpRequest.DONE) {
                 xhr.abort();
-                const progressList = document.getElementById('progressList');
-                const progressItem = progressList.children[index];
                 const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
                 setProgressState(progressItem, null, resources.cancelled, 'error');
                 cancelBtn.textContent = resources.retry;
                 cancelBtn.disabled = false;
-                const file = progressItem._file;
-                cancelBtn.onclick = () => retryFile(file, progressItem, xhrs, index);
+                cancelBtn.onclick = () => retryFile(progressItem._file, progressItem);
             }
         }
 
-        // 处理新建目录（完全不变）
+        // 处理新建目录
         async function handleCreateDir() {
             const resources = getCurrentLanguageResources();
             const dirName = prompt(resources.createDirPrompt);
@@ -1486,7 +1475,7 @@
             document.body.removeChild(link);
         }
 
-        // 处理删除（完全不变）
+        // 处理删除
         async function handleDelete(fullPath, isDir) {
             const resources = getCurrentLanguageResources();
             const confirmMsg = isDir
