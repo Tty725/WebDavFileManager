@@ -763,7 +763,9 @@
                 'file': '文件',
                 'size': '大小',
                 'modifyTime': '修改时间',
-                'operation': '操作'
+                'operation': '操作',
+                'cancelled': '已取消',
+                'destSameAsSource': '目标路径与源路径相同或为根目录，请重新输入'
             },
             'en': {
                 'title': 'WebDAV - My Cloud Storage',
@@ -808,7 +810,9 @@
                 'file': 'File',
                 'size': 'Size',
                 'modifyTime': 'Modified Time',
-                'operation': 'Operation'
+                'operation': 'Operation',
+                'cancelled': 'Cancelled',
+                'destSameAsSource': 'Destination is the same as root or source, please re-enter'
             }
         };
         // ==========================================================
@@ -1361,7 +1365,7 @@
                 const progressList = document.getElementById('progressList');
                 const progressItem = progressList.children[index];
                 const cancelBtn = progressItem.querySelector('.progress-btn-cancel');
-                setProgressState(progressItem, null, '已取消', 'error');
+                setProgressState(progressItem, null, resources.cancelled, 'error');
                 cancelBtn.textContent = resources.retry;
                 cancelBtn.disabled = false;
                 const file = progressItem._file;
@@ -1430,7 +1434,9 @@
             if (!destPath || destPath.trim() === '') return;
 
             const oldPath = DAV_API_ROOT + oldFullPath;
-            let newFullPath = currentRelativePath + destPath.trim();
+            // 目标路径分段编码，保留 / 与 .. 结构
+            const encodedDest = destPath.trim().split('/').map(seg => encodeURIComponent(seg)).join('/');
+            let newFullPath = currentRelativePath + encodedDest;
             // 目录目标必须带尾缀 /，与源保持一致
             if (isDir && !newFullPath.endsWith('/')) newFullPath += '/';
             const newPath = DAV_API_ROOT + newFullPath;
@@ -1440,7 +1446,7 @@
                 const destUrl = new URL(newPath, window.location.origin).href;
                 const rootUrl = new URL(DAV_API_ROOT, window.location.origin).href;
                 if (destUrl === rootUrl || destUrl === sourceUrl) {
-                    alert('目标路径与源路径相同或为根目录，请重新输入');
+                    alert(resources.destSameAsSource);
                     return;
                 }
                 const response = await fetch(oldPath, {
@@ -1451,7 +1457,7 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 loadPath(currentRelativePath);
             } catch (err) {
-                alert(`${resources.moveFailed || '移动失败：'}${err.message}`);
+                alert(`${resources.moveFailed}${err.message}`);
                 console.error('移动失败', err);
             }
         }
@@ -1463,7 +1469,9 @@
             if (!destPath || destPath.trim() === '') return;
 
             const oldPath = DAV_API_ROOT + oldFullPath;
-            let newFullPath = currentRelativePath + destPath.trim();
+            // 目标路径分段编码，保留 / 与 .. 结构
+            const encodedDest = destPath.trim().split('/').map(seg => encodeURIComponent(seg)).join('/');
+            let newFullPath = currentRelativePath + encodedDest;
             // 目录目标必须带尾缀 /，与源保持一致
             if (isDir && !newFullPath.endsWith('/')) newFullPath += '/';
             const newPath = DAV_API_ROOT + newFullPath;
@@ -1473,7 +1481,7 @@
                 const destUrl = new URL(newPath, window.location.origin).href;
                 const rootUrl = new URL(DAV_API_ROOT, window.location.origin).href;
                 if (destUrl === rootUrl || destUrl === sourceUrl) {
-                    alert('目标路径与源路径相同或为根目录，请重新输入');
+                    alert(resources.destSameAsSource);
                     return;
                 }
                 const response = await fetch(oldPath, {
@@ -1484,7 +1492,7 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 loadPath(currentRelativePath);
             } catch (err) {
-                alert(`${resources.copyFailed || '复制失败：'}${err.message}`);
+                alert(`${resources.copyFailed}${err.message}`);
                 console.error('复制失败', err);
             }
         }
