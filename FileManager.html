@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   WebDAV 文件管理器
-  版本：1.0.0 by 2026/729
+  版本：3.0 by 2026/729
   作者：Tty725
   仓库：https://github.com/Tty725/WebDavManager
 -->
@@ -272,7 +272,7 @@
         .file-op-row {
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
+            gap: 6px;
         }
 
         /* 按钮样式：增大触摸区域 */
@@ -288,6 +288,19 @@
 
         .btn:active {
             opacity: 0.7;
+        }
+
+        /* 纯图标按钮：方形等宽 */
+        .btn-icon {
+            padding: 6px;
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05em;
+            line-height: 1;
+            flex-shrink: 0;
         }
 
         .btn-primary {
@@ -646,6 +659,11 @@
             color: #aaa;
             text-decoration: underline;
         }
+
+        body.dark-mode #dirMoveWarning {
+            color: #ffb74d !important;
+            background: #3d2e00 !important;
+        }
     </style>
 </head>
 
@@ -679,6 +697,9 @@
         <h3 class="upload-progress-title" style="margin-bottom: 10px; font-size: 1em;">上传进度</h3>
         <div id="progressList"></div>
     </div>
+
+    <!-- 目录移动/复制警告 -->
+    <div id="dirMoveWarning" style="font-size:0.85em;color:#e68a00;margin-bottom:8px;padding:6px 12px;background:#fff8e1;border-radius:6px;"></div>
 
     <!-- PC端表头 -->
     <div class="file-list-header">
@@ -729,6 +750,13 @@
                 'createDirFailed': '创建目录失败：',
                 'renameFailed': '重命名失败：',
                 'deleteFailed': '删除失败：',
+                'moveFailed': '移动失败：',
+                'copyFailed': '复制失败：',
+                'move': '移动到',
+                'movePrompt': '请输入【不存在的】目标路径（相对于当前目录）：\n示例：../backup/file.txt',
+                'copy': '复制到',
+                'copyPrompt': '请输入【不存在的】目标路径（相对于当前目录）：\n示例：../backup/file.txt',
+                'dirMoveWarning': '⚠️ 对文件夹做移动或复制时，目标路径不能是已存在的，因为Nginx是先删除目标目录！',
                 'authFailed': '认证失败，请刷新页面重新输入账号密码',
                 'requestFailed': '请求失败:',
                 'directory': '目录',
@@ -767,6 +795,13 @@
                 'createDirFailed': 'Failed to create directory:',
                 'renameFailed': 'Failed to rename:',
                 'deleteFailed': 'Failed to delete:',
+                'moveFailed': 'Move failed:',
+                'copyFailed': 'Copy failed:',
+                'move': 'Move to',
+                'movePrompt': 'Enter a 【non-existing】 destination path (relative to current directory):\ne.g., ../backup/file.txt',
+                'copy': 'Copy to',
+                'copyPrompt': 'Enter a 【non-existing】 destination path (relative to current directory):\ne.g., ../backup/file.txt',
+                'dirMoveWarning': '⚠️ When moving or copying a folder, the destination must not already exist, because Nginx deletes the target directory first!',
                 'authFailed': 'Authentication failed, please refresh and re-enter credentials',
                 'requestFailed': 'Request failed:',
                 'directory': 'Directory',
@@ -825,6 +860,10 @@
 
             // 更新上传进度区域标题
             document.querySelector('.upload-progress-title').textContent = resources.uploadProgress;
+
+            // 更新目录移动/复制警告
+            const warnEl = document.getElementById('dirMoveWarning');
+            if (warnEl) warnEl.textContent = resources.dirMoveWarning;
 
             // 更新表头
             document.querySelectorAll('.file-list-header div')[0].textContent = resources.file;
@@ -1105,11 +1144,13 @@
                         <span class="file-meta file-time">${file.modifyTime}</span>
                     </div>
                     
-                    <!-- 第三行：操作按钮 -->
+                    <!-- 第三行：操作按钮（纯图标） -->
                     <div class="file-op-row">
-                        ${!file.isDir ? `<button class="btn btn-default" onclick="handleDownload('${file.fullRelativePath}', '${file.fileName}')">${resources.download}</button>` : ''}
-                        <button class="btn btn-default" onclick="handleRename('${file.fullRelativePath}', '${file.fileName}', ${file.isDir})">${resources.rename}</button>
-                        <button class="btn btn-danger" onclick="handleDelete('${file.fullRelativePath}', ${file.isDir})">${resources.delete}</button>
+                        ${!file.isDir ? `<button class="btn btn-default btn-icon" title="${resources.download}" onclick="handleDownload('${file.fullRelativePath}', '${file.fileName}')">📥</button>` : ''}
+                        <button class="btn btn-default btn-icon" title="${resources.rename}" onclick="handleRename('${file.fullRelativePath}', '${file.fileName}', ${file.isDir})">✏️</button>
+                        <button class="btn btn-default btn-icon" title="${resources.move}" onclick="handleMove('${file.fullRelativePath}', '${file.fileName}', ${file.isDir})">✂️</button>
+                        <button class="btn btn-default btn-icon" title="${resources.copy}" onclick="handleCopy('${file.fullRelativePath}', '${file.fileName}', ${file.isDir})">📑</button>
+                        <button class="btn btn-default btn-icon" title="${resources.delete}" onclick="handleDelete('${file.fullRelativePath}', ${file.isDir})">🗑️</button>
                     </div>
                 </div>
             `;
@@ -1298,7 +1339,7 @@
             try {
                 const response = await fetch(oldPath, {
                     method: 'MOVE',
-                    headers: { 'Destination': newPath },
+                    headers: { 'Destination': new URL(newPath, window.location.origin).href },
                     credentials: 'include'
                 });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1306,6 +1347,72 @@
             } catch (err) {
                 alert(`${resources.renameFailed}${err.message}`);
                 console.error('重命名失败', err);
+            }
+        }
+
+        // 处理移动到
+        async function handleMove(oldFullPath, oldFileName, isDir) {
+            const resources = getCurrentLanguageResources();
+            const destPath = prompt(resources.movePrompt);
+            if (!destPath || destPath.trim() === '') return;
+
+            const oldPath = DAV_API_ROOT + oldFullPath;
+            let newFullPath = currentRelativePath + destPath.trim();
+            // 目录目标必须带尾缀 /，与源保持一致
+            if (isDir && !newFullPath.endsWith('/')) newFullPath += '/';
+            const newPath = DAV_API_ROOT + newFullPath;
+
+            try {
+                const sourceUrl = new URL(DAV_API_ROOT + oldFullPath, window.location.origin).href;
+                const destUrl = new URL(newPath, window.location.origin).href;
+                const rootUrl = new URL(DAV_API_ROOT, window.location.origin).href;
+                if (destUrl === rootUrl || destUrl === sourceUrl) {
+                    alert('目标路径与源路径相同或为根目录，请重新输入');
+                    return;
+                }
+                const response = await fetch(oldPath, {
+                    method: 'MOVE',
+                    headers: { 'Destination': destUrl },
+                    credentials: 'include'
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                loadPath(currentRelativePath);
+            } catch (err) {
+                alert(`${resources.moveFailed || '移动失败：'}${err.message}`);
+                console.error('移动失败', err);
+            }
+        }
+
+        // 处理复制到
+        async function handleCopy(oldFullPath, oldFileName, isDir) {
+            const resources = getCurrentLanguageResources();
+            const destPath = prompt(resources.copyPrompt);
+            if (!destPath || destPath.trim() === '') return;
+
+            const oldPath = DAV_API_ROOT + oldFullPath;
+            let newFullPath = currentRelativePath + destPath.trim();
+            // 目录目标必须带尾缀 /，与源保持一致
+            if (isDir && !newFullPath.endsWith('/')) newFullPath += '/';
+            const newPath = DAV_API_ROOT + newFullPath;
+
+            try {
+                const sourceUrl = new URL(DAV_API_ROOT + oldFullPath, window.location.origin).href;
+                const destUrl = new URL(newPath, window.location.origin).href;
+                const rootUrl = new URL(DAV_API_ROOT, window.location.origin).href;
+                if (destUrl === rootUrl || destUrl === sourceUrl) {
+                    alert('目标路径与源路径相同或为根目录，请重新输入');
+                    return;
+                }
+                const response = await fetch(oldPath, {
+                    method: 'COPY',
+                    headers: { 'Destination': destUrl },
+                    credentials: 'include'
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                loadPath(currentRelativePath);
+            } catch (err) {
+                alert(`${resources.copyFailed || '复制失败：'}${err.message}`);
+                console.error('复制失败', err);
             }
         }
 
