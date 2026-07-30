@@ -1,6 +1,8 @@
+# WebDav File Manager
+
 ## 中文
 
-不需要PHP等后端服务，结合 Nginx 的 `--with-http_dav_module` 默认模块 + HTTP Basic 认证 + HTML+ JavaScript，在浏览器中，对服务器指定路径（可配置）下，实现文件与子目录的查看、删除、重命名、上传的功能。
+不需要PHP等后端服务，结合 Nginx 的 `--with-http_dav_module` 默认模块 + HTTP Basic 认证 + HTML+ JavaScript，在浏览器中，对服务器指定路径（可配置）下，实现文件与子目录的查看、上传、删除、改名、新建、移动、复制的功能。
 
 使用方法：
 
