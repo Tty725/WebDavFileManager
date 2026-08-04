@@ -1057,6 +1057,17 @@
             loadPath(currentRelativePath);
             uploadBtn.addEventListener('click', handleFileUpload);
             createDirBtn.addEventListener('click', handleCreateDir);
+            // 上传模态事件
+            document.getElementById('uploadActionBtn').addEventListener('click', openUploadModal);
+            document.getElementById('modalSelectFileBtn').addEventListener('click', () => {
+                document.getElementById('modalFileInput').click();
+            });
+            document.getElementById('modalFileInput').addEventListener('change', handleModalSelect);
+            document.getElementById('modalStartUploadBtn').addEventListener('click', handleModalStartUpload);
+            document.getElementById('uploadModalCloseBtn').addEventListener('click', closeUploadModal);
+            document.getElementById('uploadModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeUploadModal();
+            });
         });
 
         // 获取当前API绝对路径
@@ -1436,6 +1447,112 @@
                             setTimeout(() => {
                                 progressArea.style.display = 'none';
                             }, 3000);
+                        }, 500);
+                    }
+                });
+            });
+        }
+
+        // ========== 上传模态 ==========
+        let selectedFiles = [];
+        let modalUploading = false;
+
+        // 打开上传模态
+        function openUploadModal() {
+            const resources = getCurrentLanguageResources();
+            selectedFiles = [];
+            modalUploading = false;
+            document.getElementById('uploadModal').style.display = 'flex';
+            document.getElementById('uploadModalTitle').textContent = resources.uploadModalTitle;
+            document.getElementById('modalSelectFileBtn').style.display = '';
+            document.getElementById('modalStartUploadBtn').style.display = '';
+            document.getElementById('modalSelectedList').style.display = 'block';
+            document.getElementById('modalSelectedList').innerHTML = '';
+            document.getElementById('modalProgressList').innerHTML = '';
+            document.getElementById('modalFileInput').value = '';
+        }
+
+        // 关闭上传模态（取消所有进行中上传）
+        function closeUploadModal() {
+            document.querySelectorAll('.progress-item').forEach(item => {
+                if (item._xhr && item._xhr.readyState !== XMLHttpRequest.DONE) {
+                    item._xhr.abort();
+                }
+            });
+            modalUploading = false;
+            document.getElementById('uploadModal').style.display = 'none';
+        }
+
+        // 渲染已选文件列表
+        function renderSelectedList() {
+            const resources = getCurrentLanguageResources();
+            const list = document.getElementById('modalSelectedList');
+            list.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'modal-selected-item';
+                item.innerHTML = `
+                    <span class="modal-selected-name">${escapeHtml(file.name)}</span>
+                    <button type="button" class="btn btn-default btn-icon modal-selected-remove" data-index="${index}" aria-label="${resources.removeItem}" title="${resources.removeItem}">✕</button>
+                `;
+                list.appendChild(item);
+            });
+            list.querySelectorAll('.modal-selected-remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedFiles.splice(Number(btn.dataset.index), 1);
+                    renderSelectedList();
+                });
+            });
+        }
+
+        // 文件选择回调
+        function handleModalSelect() {
+            const input = document.getElementById('modalFileInput');
+            if (input.files.length > 0) {
+                selectedFiles = Array.from(input.files);
+                renderSelectedList();
+            }
+        }
+
+        // 模态内"开始上传"
+        function handleModalStartUpload() {
+            const resources = getCurrentLanguageResources();
+            if (selectedFiles.length === 0) {
+                alert(resources.selectFileFirst);
+                return;
+            }
+            document.getElementById('modalSelectFileBtn').style.display = 'none';
+            document.getElementById('modalSelectedList').style.display = 'none';
+            document.getElementById('modalStartUploadBtn').style.display = 'none';
+            modalUploading = true;
+            startUpload(selectedFiles);
+        }
+
+        // 通用批量上传：渲染进度并处理完成行为
+        function startUpload(files) {
+            const resources = getCurrentLanguageResources();
+            const progressList = document.getElementById('modalProgressList');
+            progressList.innerHTML = '';
+
+            let completedCount = 0;
+            const totalFiles = files.length;
+            let hasError = false;
+
+            Array.from(files).forEach((file) => {
+                const progressItem = createProgressItem(file);
+                progressList.appendChild(progressItem);
+                uploadFileEntry(file, progressItem, (success) => {
+                    completedCount++;
+                    if (!success) hasError = true;
+                    if (completedCount === totalFiles) {
+                        setTimeout(() => {
+                            modalUploading = false;
+                            if (hasError) {
+                                document.getElementById('uploadModalTitle').textContent = resources.someFailed;
+                            } else {
+                                closeUploadModal();
+                                loadPath(currentRelativePath);
+                            }
                         }, 500);
                     }
                 });
