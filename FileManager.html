@@ -804,6 +804,11 @@
                 'cancelled': '已取消',
                 'destSameAsSource': '目标路径与源路径相同或为根目录，请重新输入',
                 'invalidName': '名称不能包含 / 字符',
+                'uploadModalTitle': '上传文件',
+                'startUpload': '开始上传',
+                'removeItem': '移除',
+                'someFailed': '部分文件上传失败',
+                'closeModal': '关闭',
                 'locale': 'zh-CN'
             },
             'en': {
@@ -854,6 +859,11 @@
                 'cancelled': 'Cancelled',
                 'destSameAsSource': 'Destination is the same as root or source, please re-enter',
                 'invalidName': 'Name cannot contain /',
+                'uploadModalTitle': 'Upload Files',
+                'startUpload': 'Start Upload',
+                'removeItem': 'Remove',
+                'someFailed': 'Some files failed to upload',
+                'closeModal': 'Close',
                 'locale': 'en-US'
             }
         };
@@ -896,9 +906,13 @@
             // 更新按钮提示文字
             document.getElementById('languageToggleBtn').title = resources.languageBtnTitle;
 
-            // 更新新入口按钮提示
+            // 更新新入口按钮与模态文案
             document.getElementById('uploadActionBtn').title = resources.uploadBtn;
             document.getElementById('createDirActionBtn').title = resources.createDirBtn;
+            document.getElementById('uploadModalTitle').textContent = resources.uploadModalTitle;
+            document.getElementById('modalSelectFileBtn').textContent = resources.selectFile;
+            document.getElementById('modalStartUploadBtn').textContent = resources.startUpload;
+            document.getElementById('uploadModalCloseBtn').setAttribute('aria-label', resources.closeModal);
 
             // 更新目录移动/复制警告
             const warnEl = document.getElementById('dirMoveWarning');
