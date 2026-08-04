@@ -60,50 +60,9 @@
             color: #fff;
         }
 
-        /* 工具栏：移动端自动换行 */
-        .toolbar {
-            margin-bottom: 20px;
-            padding: 12px;
-            background: #f5f7fa;
-            border-radius: 8px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .toolbar {
-            background: #2d2d2d;
-        }
-
-        #fileInput {
-            flex: 1;
-            min-width: 180px;
-            padding: 8px;
-            font-size: 1em;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-        }
-
         #pathNavContent {
             flex: 1;
             margin-right: 10px;
-        }
-
-        body.dark-mode #fileInput {
-            background: #3d3d3d;
-            border-color: #555;
-            color: #e0e0e0;
-        }
-
-        /* 按钮容器：在移动端右对齐 */
-        .toolbar-buttons {
-            display: flex;
-            gap: 10px;
-            margin-left: auto;
         }
 
         /* 语言切换按钮 */
@@ -113,8 +72,8 @@
             border: none;
             border-radius: 6px;
             transition: all 0.2s;
-            background: transparent;
-            color: #666;
+            background: #ffffff;
+            color: #595959;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -125,15 +84,18 @@
         }
 
         .language-toggle-btn:hover {
-            background: rgba(0, 0, 0, 0.05);
-        }
-
-        body.dark-mode .language-toggle-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: #f3f3f3;
+            color: #1a1a1a;
         }
 
         body.dark-mode .language-toggle-btn {
-            color: #aaa;
+            background: #1f1f1f;
+            color: #c8c8c8;
+        }
+
+        body.dark-mode .language-toggle-btn:hover {
+            background: #2a2a2a;
+            color: #f0f0f0;
         }
 
         .language-toggle-btn svg {
@@ -344,25 +306,6 @@
 
         .error {
             color: #ff4d4f;
-        }
-
-        /* 上传进度区域 */
-        .upload-progress-area {
-            background: #f5f7fa;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .upload-progress-area {
-            background: #2d2d2d;
-        }
-
-        .upload-progress-title {
-            color: #222;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .upload-progress-title {
-            color: #fff;
         }
 
         /* ========== 关键：PC端媒体查询（屏幕宽度 > 768px） ========== */
@@ -632,6 +575,126 @@
             color: #ffb74d !important;
             background: #3d2e00 !important;
         }
+
+        /* ========== 上传模态窗口 ========== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 15px;
+        }
+
+        body.dark-mode .modal-overlay {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-box {
+            background: #fff;
+            color: #333;
+            border-radius: 12px;
+            width: 480px;
+            max-width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        body.dark-mode .modal-box {
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        body.dark-mode .modal-header {
+            border-bottom-color: #444;
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+            color: #666;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .modal-close-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        body.dark-mode .modal-close-btn {
+            color: #aaa;
+        }
+
+        body.dark-mode .modal-close-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 12px 16px;
+            border-top: 1px solid #eee;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        body.dark-mode .modal-footer {
+            border-top-color: #444;
+        }
+
+        .modal-selected-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            margin-top: 8px;
+            background: #f5f7fa;
+            border-radius: 6px;
+        }
+
+        body.dark-mode .modal-selected-item {
+            background: #3d3d3d;
+        }
+
+        .modal-selected-name {
+            flex: 1;
+            word-break: break-all;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+
+        .modal-selected-remove {
+            flex-shrink: 0;
+        }
+
+        /* 手机端模态近全屏 */
+        @media (max-width: 767px) {
+            .modal-box {
+                width: 92vw;
+                max-height: 92vh;
+            }
+        }
     </style>
 </head>
 
@@ -642,6 +705,8 @@
     <div class="path-nav" id="pathNav">
         <span id="pathNavContent"></span>
         <div class="path-nav-buttons">
+            <button class="btn btn-default btn-icon" id="uploadActionBtn" title="上传">📤</button>
+            <button class="btn btn-default btn-icon" id="createDirActionBtn" title="新建目录">📁</button>
             <button class="language-toggle-btn" id="languageToggleBtn" title="切换语言">
                 <svg id="languageIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <!-- 初始图标将在 JS 中动态生成 -->
@@ -650,20 +715,23 @@
         </div>
     </div>
 
-    <!-- 工具栏 -->
-    <div class="toolbar">
-        <input type="file" id="fileInput" multiple aria-label="选择文件">
-        <div class="toolbar-buttons">
-            <button class="btn btn-primary" id="uploadBtn">上传选中文件</button>
-            <button class="btn btn-default" id="createDirBtn">新建目录</button>
+    <!-- 上传模态窗口 -->
+    <div id="uploadModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="uploadModalTitle">
+            <div class="modal-header">
+                <span id="uploadModalTitle">上传文件</span>
+                <button type="button" class="modal-close-btn" id="uploadModalCloseBtn" aria-label="关闭">✕</button>
+            </div>
+            <div class="modal-body">
+                <button type="button" class="btn btn-default" id="modalSelectFileBtn">选择文件</button>
+                <input type="file" id="modalFileInput" multiple hidden>
+                <div id="modalSelectedList"></div>
+                <div id="modalProgressList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="modalStartUploadBtn">开始上传</button>
+            </div>
         </div>
-    </div>
-
-    <!-- 上传进度条区域 -->
-    <div id="uploadProgressArea" class="upload-progress-area"
-        style="display: none; margin-bottom: 20px; padding: 12px; border-radius: 8px;">
-        <h3 class="upload-progress-title" style="margin-bottom: 10px; font-size: 1em;">上传进度</h3>
-        <div id="progressList"></div>
     </div>
 
     <!-- 目录移动/复制警告 -->
@@ -736,6 +804,11 @@
                 'cancelled': '已取消',
                 'destSameAsSource': '目标路径与源路径相同或为根目录，请重新输入',
                 'invalidName': '名称不能包含 / 字符',
+                'uploadModalTitle': '上传文件',
+                'startUpload': '开始上传',
+                'removeItem': '移除',
+                'someFailed': '部分文件上传失败',
+                'closeModal': '关闭',
                 'locale': 'zh-CN'
             },
             'en': {
@@ -786,6 +859,11 @@
                 'cancelled': 'Cancelled',
                 'destSameAsSource': 'Destination is the same as root or source, please re-enter',
                 'invalidName': 'Name cannot contain /',
+                'uploadModalTitle': 'Upload Files',
+                'startUpload': 'Start Upload',
+                'removeItem': 'Remove',
+                'someFailed': 'Some files failed to upload',
+                'closeModal': 'Close',
                 'locale': 'en-US'
             }
         };
@@ -828,13 +906,13 @@
             // 更新按钮提示文字
             document.getElementById('languageToggleBtn').title = resources.languageBtnTitle;
 
-            // 更新工具栏按钮
-            document.getElementById('uploadBtn').textContent = resources.uploadBtn;
-            document.getElementById('createDirBtn').textContent = resources.createDirBtn;
-            document.getElementById('fileInput').setAttribute('aria-label', resources.selectFile);
-
-            // 更新上传进度区域标题
-            document.querySelector('.upload-progress-title').textContent = resources.uploadProgress;
+            // 更新新入口按钮与模态文案
+            document.getElementById('uploadActionBtn').title = resources.uploadBtn;
+            document.getElementById('createDirActionBtn').title = resources.createDirBtn;
+            document.getElementById('uploadModalTitle').textContent = resources.uploadModalTitle;
+            document.getElementById('modalSelectFileBtn').textContent = resources.selectFile;
+            document.getElementById('modalStartUploadBtn').textContent = resources.startUpload;
+            document.getElementById('uploadModalCloseBtn').setAttribute('aria-label', resources.closeModal);
 
             // 更新目录移动/复制警告
             const warnEl = document.getElementById('dirMoveWarning');
@@ -881,7 +959,7 @@
             const languageIcon = document.getElementById('languageIcon');
             languageIcon.innerHTML = '';
 
-            const iconPath = `<path fill="none" stroke="currentColor" stroke-width="1" d="m18.5 10l4.4 11h-2.155l-1.201-3h-4.09l-1.199 3h-2.154L16.5 10zM10 2v2h6v2h-1.968a18.2 18.2 0 0 1-3.62 6.301a15 15 0 0 0 2.335 1.707l-.75 1.878A17 17 0 0 1 9 13.725a16.7 16.7 0 0 1-6.201 3.548l-.536-1.929a14.7 14.7 0 0 0 5.327-3.042A18 18 0 0 1 4.767 8h2.24A16 16 0 0 0 9 10.877a16.2 16.2 0 0 0 2.91-4.876L2 6V4h6V2zm7.5 10.885L16.253 16h2.492z"></path>`;
+            const iconPath = `<path fill="currentColor" stroke="none" d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"></path>`;
 
             languageIcon.innerHTML = iconPath;
         }
@@ -890,9 +968,6 @@
         let currentRelativePath = '';
         const fileListEl = document.getElementById('fileList');
         const pathNavEl = document.getElementById('pathNav');
-        const fileInput = document.getElementById('fileInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const createDirBtn = document.getElementById('createDirBtn');
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
@@ -911,8 +986,18 @@
             pathNavEl.addEventListener('click', handlePathNavClick);
             // 加载文件列表
             loadPath(currentRelativePath);
-            uploadBtn.addEventListener('click', handleFileUpload);
-            createDirBtn.addEventListener('click', handleCreateDir);
+            document.getElementById('createDirActionBtn').addEventListener('click', handleCreateDir);
+            // 上传模态事件
+            document.getElementById('uploadActionBtn').addEventListener('click', openUploadModal);
+            document.getElementById('modalSelectFileBtn').addEventListener('click', () => {
+                document.getElementById('modalFileInput').click();
+            });
+            document.getElementById('modalFileInput').addEventListener('change', handleModalSelect);
+            document.getElementById('modalStartUploadBtn').addEventListener('click', handleModalStartUpload);
+            document.getElementById('uploadModalCloseBtn').addEventListener('click', closeUploadModal);
+            document.getElementById('uploadModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeUploadModal();
+            });
         });
 
         // 获取当前API绝对路径
@@ -1260,38 +1345,106 @@
             });
         }
 
-        // 处理文件上传（带进度条）
-        function handleFileUpload() {
+        // ========== 上传模态 ==========
+        let selectedFiles = [];
+        let modalUploading = false;
+
+        // 打开上传模态
+        function openUploadModal() {
             const resources = getCurrentLanguageResources();
-            const files = fileInput.files;
-            if (files.length === 0) {
+            selectedFiles = [];
+            modalUploading = false;
+            document.getElementById('uploadModal').style.display = 'flex';
+            document.getElementById('uploadModalTitle').textContent = resources.uploadModalTitle;
+            document.getElementById('modalSelectFileBtn').style.display = '';
+            document.getElementById('modalStartUploadBtn').style.display = '';
+            document.getElementById('modalSelectedList').style.display = 'block';
+            document.getElementById('modalSelectedList').innerHTML = '';
+            document.getElementById('modalProgressList').innerHTML = '';
+            document.getElementById('modalFileInput').value = '';
+        }
+
+        // 关闭上传模态（取消所有进行中上传）
+        function closeUploadModal() {
+            document.querySelectorAll('.progress-item').forEach(item => {
+                if (item._xhr && item._xhr.readyState !== XMLHttpRequest.DONE) {
+                    item._xhr.abort();
+                }
+            });
+            modalUploading = false;
+            document.getElementById('uploadModal').style.display = 'none';
+        }
+
+        // 渲染已选文件列表
+        function renderSelectedList() {
+            const resources = getCurrentLanguageResources();
+            const list = document.getElementById('modalSelectedList');
+            list.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'modal-selected-item';
+                item.innerHTML = `
+                    <span class="modal-selected-name">${escapeHtml(file.name)}</span>
+                    <button type="button" class="btn btn-default btn-icon modal-selected-remove" data-index="${index}" aria-label="${resources.removeItem}" title="${resources.removeItem}">✕</button>
+                `;
+                list.appendChild(item);
+            });
+            list.querySelectorAll('.modal-selected-remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedFiles.splice(Number(btn.dataset.index), 1);
+                    renderSelectedList();
+                });
+            });
+        }
+
+        // 文件选择回调
+        function handleModalSelect() {
+            const input = document.getElementById('modalFileInput');
+            if (input.files.length > 0) {
+                selectedFiles = Array.from(input.files);
+                renderSelectedList();
+            }
+        }
+
+        // 模态内"开始上传"
+        function handleModalStartUpload() {
+            const resources = getCurrentLanguageResources();
+            if (selectedFiles.length === 0) {
                 alert(resources.selectFileFirst);
                 return;
             }
+            document.getElementById('modalSelectFileBtn').style.display = 'none';
+            document.getElementById('modalSelectedList').style.display = 'none';
+            document.getElementById('modalStartUploadBtn').style.display = 'none';
+            modalUploading = true;
+            startUpload(selectedFiles);
+        }
 
-            // 显示进度条区域
-            const progressArea = document.getElementById('uploadProgressArea');
-            const progressList = document.getElementById('progressList');
-            progressArea.style.display = 'block';
+        // 通用批量上传：渲染进度并处理完成行为
+        function startUpload(files) {
+            const resources = getCurrentLanguageResources();
+            const progressList = document.getElementById('modalProgressList');
             progressList.innerHTML = '';
 
             let completedCount = 0;
             const totalFiles = files.length;
+            let hasError = false;
 
             Array.from(files).forEach((file) => {
                 const progressItem = createProgressItem(file);
                 progressList.appendChild(progressItem);
-                uploadFileEntry(file, progressItem, () => {
+                uploadFileEntry(file, progressItem, (success) => {
                     completedCount++;
-                    // 所有文件终结后刷新列表（无论成功/失败/取消）
+                    if (!success) hasError = true;
                     if (completedCount === totalFiles) {
                         setTimeout(() => {
-                            fileInput.value = '';
-                            loadPath(currentRelativePath);
-                            // 3秒后自动隐藏进度条
-                            setTimeout(() => {
-                                progressArea.style.display = 'none';
-                            }, 3000);
+                            modalUploading = false;
+                            if (hasError) {
+                                document.getElementById('uploadModalTitle').textContent = resources.someFailed;
+                            } else {
+                                closeUploadModal();
+                                loadPath(currentRelativePath);
+                            }
                         }, 500);
                     }
                 });
