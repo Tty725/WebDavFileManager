@@ -60,50 +60,9 @@
             color: #fff;
         }
 
-        /* 工具栏：移动端自动换行 */
-        .toolbar {
-            margin-bottom: 20px;
-            padding: 12px;
-            background: #f5f7fa;
-            border-radius: 8px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .toolbar {
-            background: #2d2d2d;
-        }
-
-        #fileInput {
-            flex: 1;
-            min-width: 180px;
-            padding: 8px;
-            font-size: 1em;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-        }
-
         #pathNavContent {
             flex: 1;
             margin-right: 10px;
-        }
-
-        body.dark-mode #fileInput {
-            background: #3d3d3d;
-            border-color: #555;
-            color: #e0e0e0;
-        }
-
-        /* 按钮容器：在移动端右对齐 */
-        .toolbar-buttons {
-            display: flex;
-            gap: 10px;
-            margin-left: auto;
         }
 
         /* 语言切换按钮 */
@@ -347,25 +306,6 @@
 
         .error {
             color: #ff4d4f;
-        }
-
-        /* 上传进度区域 */
-        .upload-progress-area {
-            background: #f5f7fa;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .upload-progress-area {
-            background: #2d2d2d;
-        }
-
-        .upload-progress-title {
-            color: #222;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .upload-progress-title {
-            color: #fff;
         }
 
         /* ========== 关键：PC端媒体查询（屏幕宽度 > 768px） ========== */
@@ -775,22 +715,6 @@
         </div>
     </div>
 
-    <!-- 工具栏 -->
-    <div class="toolbar">
-        <input type="file" id="fileInput" multiple aria-label="选择文件">
-        <div class="toolbar-buttons">
-            <button class="btn btn-primary" id="uploadBtn">上传选中文件</button>
-            <button class="btn btn-default" id="createDirBtn">新建目录</button>
-        </div>
-    </div>
-
-    <!-- 上传进度条区域 -->
-    <div id="uploadProgressArea" class="upload-progress-area"
-        style="display: none; margin-bottom: 20px; padding: 12px; border-radius: 8px;">
-        <h3 class="upload-progress-title" style="margin-bottom: 10px; font-size: 1em;">上传进度</h3>
-        <div id="progressList"></div>
-    </div>
-
     <!-- 上传模态窗口 -->
     <div id="uploadModal" class="modal-overlay" style="display:none;">
         <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="uploadModalTitle">
@@ -972,13 +896,9 @@
             // 更新按钮提示文字
             document.getElementById('languageToggleBtn').title = resources.languageBtnTitle;
 
-            // 更新工具栏按钮
-            document.getElementById('uploadBtn').textContent = resources.uploadBtn;
-            document.getElementById('createDirBtn').textContent = resources.createDirBtn;
-            document.getElementById('fileInput').setAttribute('aria-label', resources.selectFile);
-
-            // 更新上传进度区域标题
-            document.querySelector('.upload-progress-title').textContent = resources.uploadProgress;
+            // 更新新入口按钮提示
+            document.getElementById('uploadActionBtn').title = resources.uploadBtn;
+            document.getElementById('createDirActionBtn').title = resources.createDirBtn;
 
             // 更新目录移动/复制警告
             const warnEl = document.getElementById('dirMoveWarning');
@@ -1034,9 +954,6 @@
         let currentRelativePath = '';
         const fileListEl = document.getElementById('fileList');
         const pathNavEl = document.getElementById('pathNav');
-        const fileInput = document.getElementById('fileInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const createDirBtn = document.getElementById('createDirBtn');
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
@@ -1055,8 +972,7 @@
             pathNavEl.addEventListener('click', handlePathNavClick);
             // 加载文件列表
             loadPath(currentRelativePath);
-            uploadBtn.addEventListener('click', handleFileUpload);
-            createDirBtn.addEventListener('click', handleCreateDir);
+            document.getElementById('createDirActionBtn').addEventListener('click', handleCreateDir);
             // 上传模态事件
             document.getElementById('uploadActionBtn').addEventListener('click', openUploadModal);
             document.getElementById('modalSelectFileBtn').addEventListener('click', () => {
@@ -1412,44 +1328,6 @@
             cancelBtn.onclick = () => cancelUpload(progressItem);
             uploadFileEntry(file, progressItem, (success) => {
                 if (success) loadPath(currentRelativePath);
-            });
-        }
-
-        // 处理文件上传（带进度条）
-        function handleFileUpload() {
-            const resources = getCurrentLanguageResources();
-            const files = fileInput.files;
-            if (files.length === 0) {
-                alert(resources.selectFileFirst);
-                return;
-            }
-
-            // 显示进度条区域
-            const progressArea = document.getElementById('uploadProgressArea');
-            const progressList = document.getElementById('progressList');
-            progressArea.style.display = 'block';
-            progressList.innerHTML = '';
-
-            let completedCount = 0;
-            const totalFiles = files.length;
-
-            Array.from(files).forEach((file) => {
-                const progressItem = createProgressItem(file);
-                progressList.appendChild(progressItem);
-                uploadFileEntry(file, progressItem, () => {
-                    completedCount++;
-                    // 所有文件终结后刷新列表（无论成功/失败/取消）
-                    if (completedCount === totalFiles) {
-                        setTimeout(() => {
-                            fileInput.value = '';
-                            loadPath(currentRelativePath);
-                            // 3秒后自动隐藏进度条
-                            setTimeout(() => {
-                                progressArea.style.display = 'none';
-                            }, 3000);
-                        }, 500);
-                    }
-                });
             });
         }
 
